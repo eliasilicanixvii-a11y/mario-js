@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<!-- Created with https://packager.turbowarp.org/ -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- We only include this to explicitly loosen the CSP of various packager environments. It does not provide any security. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'self' 'unsafe-inline' 'unsafe-eval' data: blob:">
+  <title>MarioJS by Elia Silicani</title>
+  <style>
+    body {
+      color: #ffffff;
+      font-family: sans-serif;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    :root, body.is-fullscreen {
+      background-color: #0699f4;
+    }
+    [hidden] {
+      display: none !important;
+    }
+    h1 {
+      font-weight: normal;
+    }
+    a {
+      color: inherit;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    #app, #loading, #error, #launch {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      cursor: default;
+      user-select: none;
+      -webkit-user-select: none;
+      background-color: #0699f4;
+    }
+    #launch {
+      background-color: rgba(0, 0, 0, 0.7);
+      cursor: pointer;
+    }
+    .green-flag {
+      width: 80px;
+      height: 80px;
+      padding: 16px;
+      border-radius: 100%;
+      background: rgba(255, 255, 255, 0.75);
+      border: 3px solid hsla(0, 100%, 100%, 1);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+    }
+    #loading {
+      
+    }
+    .progress-bar-outer {
+      border: 1px solid currentColor;
+      height: 10px;
+      width: 200px;
+      max-width: 200px;
+    }
+    .progress-bar-inner {
+      height: 100%;
+      width: 0;
+      background-color: currentColor;
+    }
+    .loading-text, noscript {
+      font-weight: normal;
+      font-size: 36px;
+      margin: 0 0 16px;
+    }
+    .loading-image {
+      margin: 0 0 16px;
+    }
+    #error-message, #error-stack {
+      font-family: monospace;
+      max-width: 600px;
+      white-space: pre-wrap;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    #error-stack {
+      text-align: left;
+      max-height: 200px;
+      overflow: auto;
+    }
+    .control-button {
+      width: 2rem;
+      height: 2rem;
+      padding: 0.375rem;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: pointer;
+      border: 0;
+      border-radius: 4px;
+    }
+    .control-button-highlight:hover {
+      background: #8b4dff26;
+    }
+    .control-button-highlight.active {
+      background: #8b4dff59;
+    }
+    .fullscreen-button {
+      background: white;
+    }
+    .standalone-fullscreen-button {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 0 0 0 4px;
+      padding: 4px;
+      cursor: pointer;
+    }
+    .sc-canvas {
+      cursor: auto;
+    }
+    .sc-monitor-root[data-opcode^="data_"] .sc-monitor-value-color {
+      background-color: #ff8c1a;
+    }
+    .sc-monitor-row-value-outer {
+      background-color: #fc662c;
+    }
+    .sc-monitor-row-value-editing .sc-monitor-row-value-outer {
+      background-color: #e25b27;
+    }
+    
+  </style>
+  <meta name="theme-color" content="#0699f4">
+  <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADEAAABACAYAAACz4p94AAAClElEQVR4AexaO24bMRCdFXKUAFGVWkdImTOkSunCQHKEFC5c5gypUvoIql1t4aMYWPsZIPD2mf/lWrRBAc+cGc4M53FIWWvrYBWv+WhLS1SUsAqpIrHK0IEySHTQhJcSsjqh5/8lsuEPzZ/SdeksEhrUmz5I9NKRrE78/2ZWgs9XJ4tBc6nvcbYpBt28LBIa1Js+SPTSEW8n/lzZwrg+noyhxfMcZJ0v1R//npYYNN9BDe9RHyR66VqTTtzMZ2OkyOHeMDgWcipe70sTEqlF954fJPbe4dz8WZ3AOWXwefbJqcU5F2T1h+1mPq/uGds+/TxPjCwSukhv+iDRS0e8nfh9a1MMW4u/ls9iKV1r0fW9JNSpd32Q6KVDWZ3gZwvI/J4N+eH2bAzYSsDv+T45tVlZJFJJLj0/SFy6A259bydw7hnOudX4/c6MwWvlyFqHl4Q69a4PEr106LDc26L49cOsBF/+mTFSsexbsxF6b8ZxqtnFPWJGJ1rsKv43wb8zIGve1PPGBTqhJW7XB4nte9gmQ1Enpq9mDpb5cv48cujD87MI65D1DsAWQxGJWCI3x8VCdvY9x6Yk3qpo3ZCmJDQ5688fbcyB7S3kZiR8XXBFYywpFveEkYptRkIXKi1c40v03UiUFLHVdzcSvuO1tdhQfDMSvuMDIopQITG7729RbKsmgeJiC4fmauNC+WCvJoFgha8b6rOHviKBXXKoXQxEFLW5cuNWJDgIZFjfIoNUKP4426Tff1Jdn6k1V5AEHEGEAZsDF8Y+kJ3PW41RErVFgIiiNldO3IoE725OcC8+KxIoCkQAyD5gDuA56ADbQnKuXygedr0jr0jACcBiPmAuBJ+/2kKxW+xBEsVJLxjwIUg8AQAA//8tnRXDAAAABklEQVQDADaUCg/zaCkkAAAAAElFTkSuQmCC">
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="launch" class="screen" hidden title="Click to start">
+    <div class="green-flag">
+      <svg viewBox="0 0 16.63 17.5" width="42" height="44">
+        <defs><style>.cls-1,.cls-2{fill:#4cbf56;stroke:#45993d;stroke-linecap:round;stroke-linejoin:round;}.cls-2{stroke-width:1.5px;}</style></defs>
+        <path class="cls-1" d="M.75,2A6.44,6.44,0,0,1,8.44,2h0a6.44,6.44,0,0,0,7.69,0V12.4a6.44,6.44,0,0,1-7.69,0h0a6.44,6.44,0,0,0-7.69,0"/>
+        <line class="cls-2" x1="0.75" y1="16.75" x2="0.75" y2="0.75"/>
+      </svg>
+    </div>
+  </div>
+
+  <div id="loading" class="screen">
+    <noscript>Enable JavaScript</noscript>
+    <h1 class="loading-text">Please wait...</h1>
+    
+    <div class="progress-bar-outer"><div class="progress-bar-inner" id="loading-inner"></div></div>
+  </div>
+
+  <div id="error" class="screen" hidden>
+    <h1>Error</h1>
+    <details>
+      <summary id="error-message"></summary>
+      <p id="error-stack"></p>
+    </details>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    const appElement = document.getElementById('app');
+    const launchScreen = document.getElementById('launch');
+    const loadingScreen = document.getElementById('loading');
+    const loadingInner = document.getElementById('loading-inner');
+    const errorScreen = document.getElementById('error');
+    const errorScreenMessage = document.getElementById('error-message');
+    const errorScreenStack = document.getElementById('error-stack');
+
+    const handleError = (error) => {
+      console.error(error);
+      if (!errorScreen.hidden) return;
+      errorScreen.hidden = false;
+      errorScreenMessage.textContent = '' + error;
+      let debug = error && error.stack || 'no stack';
+      debug += '\nUser agent: ' + navigator.userAgent;
+      errorScreenStack.textContent = debug;
+    };
+    const setProgress = (progress) => {
+      if (loadingInner) loadingInner.style.width = progress * 100 + '%';
+    };
+    const interpolate = (a, b, t) => a + t * (b - a);
+
+    try {
+      setProgress(0.1);
+
+      const scaffolding = new Scaffolding.Scaffolding();
+      scaffolding.width = 480;
+      scaffolding.height = 360;
+      scaffolding.resizeMode = "preserve-ratio";
+      scaffolding.editableLists = false;
+      scaffolding.usePackagedRuntime = true;
+      scaffolding.setup();
+      scaffolding.appendTo(appElement);
+
+      const vm = scaffolding.vm;
+      window.scaffolding = scaffolding;
+      window.vm = scaffolding.vm;
+      window.Scratch = {
+        vm,
+        renderer: vm.renderer,
+        audioEngine: vm.runtime.audioEngine,
+        bitmapAdapter: vm.runtime.v2BitmapAdapter,
+        videoProvider: vm.runtime.ioDevices.video.provider
+      };
+
+      scaffolding.setUsername("player####".replace(/#/g, () => Math.floor(Math.random() * 10)));
+      scaffolding.setAccentColor("#8b4dff");
+
+      try {
+        scaffolding.addCloudProvider(new Scaffolding.Cloud.WebSocketProvider(["wss://clouddata.turbowarp.org","wss://clouddata.turbowarp.xyz"], "p4-@Progetto.sb3"));
+      } catch (error) {
+        console.error(error);
+      }
+
+      vm.setTurboMode(false);
+      if (vm.setInterpolation) vm.setInterpolation(false);
+      if (vm.setFramerate) vm.setFramerate(30);
+      if (vm.renderer.setUseHighQualityRender) vm.renderer.setUseHighQualityRender(false);
+      if (vm.setRuntimeOptions) vm.setRuntimeOptions({
+        fencing: true,
+        miscLimits: true,
+        maxClones: 300,
+      });
+      if (vm.setCompilerOptions) vm.setCompilerOptions({
+        enabled: true,
+        warpTimer: false
+      });
+      if (vm.renderer.setMaxTextureDimension) vm.renderer.setMaxTextureDimension(2048);
+
+      // enforcePrivacy threat model only makes sense in the editor
+      if (vm.runtime.setEnforcePrivacy) vm.runtime.setEnforcePrivacy(false);
+
+      if (typeof ScaffoldingAddons !== 'undefined') {
+        ScaffoldingAddons.run(scaffolding, {"gamepad":false,"pointerlock":false,"specialCloudBehaviors":false,"unsafeCloudBehaviors":false,"pause":false});
+      }
+
+      scaffolding.setExtensionSecurityManager({
+        getSandboxMode: () => 'unsandboxed',
+        canLoadExtensionFromProject: () => true
+      });
+      for (const extension of ["data:text/javascript;,(function(Scratch)%20%7B%20%2F%2F%20Name%3A%20Key%20Simulation%0A%2F%2F%20ID%3A%20cubesterKeySimulation%0A%2F%2F%20Description%3A%20Simulate%20key%20presses%20and%20mouse%20clicks.%0A%2F%2F%20By%3A%20CubesterYT%20%3Chttps%3A%2F%2Fscratch.mit.edu%2Fusers%2FCubesterYT%2F%3E%0A%2F%2F%20License%3A%20MIT%20AND%20MPL-2.0%0A%0A%2F*%20generated%20l10n%20code%20*%2FScratch.translate.setup(%7B%22de%22%3A%7B%22_Key%20Simulation%22%3A%22Tastensimulation%22%2C%22_backspace%22%3A%22Entfernen%22%2C%22_caps%20lock%22%3A%22Feststelltaste%22%2C%22_click%20%5BBUTTON%5D%20mouse%20button%20at%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%20for%20%5BSECONDS%5D%20seconds%20and%20%5BAND_WAIT%5D%22%3A%22Klicke%20%5BBUTTON%5D%20Maus-Button%20auf%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%20f%C3%BCr%20%5BSECONDS%5D%20Sekunden%20und%20%5BAND_WAIT%5D%22%2C%22_continue%22%3A%22Weiter%22%2C%22_control%22%3A%22Steuerung%22%2C%22_delete%22%3A%22Entfernen%22%2C%22_down%20arrow%22%3A%22Pfeil%20nach%20unten%22%2C%22_end%22%3A%22Beenden%22%2C%22_enter%22%3A%22Enter%22%2C%22_escape%22%3A%22Escape%22%2C%22_home%22%3A%22Haus%22%2C%22_insert%22%3A%22Einf%C3%BCgen%22%2C%22_left%22%3A%22Links%22%2C%22_left%20arrow%22%3A%22Pfeil%20nach%20links%22%2C%22_middle%22%3A%22Mitte%22%2C%22_move%20mouse%20to%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%3A%22Bewege%20Maus%20zu%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%2C%22_page%20down%22%3A%22Seite%20nach%20unten%22%2C%22_page%20up%22%3A%22Seite%20nach%20oben%22%2C%22_press%20%5BKEY%5D%20for%20%5BSECONDS%5D%20seconds%20and%20%5BAND_WAIT%5D%22%3A%22Presse%20%5BKEY%5D%20f%C3%BCr%20%5BSECONDS%5D%20Sekunden%20und%20%5BAND_WAIT%5D%22%2C%22_right%22%3A%22Rechts%22%2C%22_right%20arrow%22%3A%22Pfeil%20nach%20rechts%22%2C%22_scroll%20lock%22%3A%22Scroll-Verhinderung%22%2C%22_shift%22%3A%22Umschalttaste%2FShift%22%2C%22_space%22%3A%22Leertaste%22%2C%22_up%20arrow%22%3A%22Pfeil%20nach%20oben%22%2C%22_wait%22%3A%22Warten%22%7D%2C%22es%22%3A%7B%22_wait%22%3A%22esperar%22%7D%2C%22fi%22%3A%7B%22_Key%20Simulation%22%3A%22N%C3%A4pp%C3%A4inj%C3%A4ljittely%22%2C%22_backspace%22%3A%22askelpalautinta%22%2C%22_caps%20lock%22%3A%22aakkoslukkoa%22%2C%22_click%20%5BBUTTON%5D%20mouse%20button%20at%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%20for%20%5BSECONDS%5D%20seconds%20and%20%5BAND_WAIT%5D%22%3A%22napauta%20hiiren%20%5BBUTTON%5D%20painiketta%20sijainnissa%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%20%5BSECONDS%5D%20sekunnin%20ajan%20ja%20%5BAND_WAIT%5D%22%2C%22_continue%22%3A%22jatka%22%2C%22_control%22%3A%22control-n%C3%A4pp%C3%A4int%C3%A4%22%2C%22_delete%22%3A%22poiston%C3%A4pp%C3%A4int%C3%A4%22%2C%22_down%20arrow%22%3A%22nuolta%20alas%22%2C%22_end%22%3A%22loppun%C3%A4pp%C3%A4int%C3%A4%22%2C%22_enter%22%3A%22enteri%C3%A4%22%2C%22_escape%22%3A%22poisp%C3%A4%C3%A4sy%C3%A4%22%2C%22_home%22%3A%22kotin%C3%A4pp%C3%A4int%C3%A4%22%2C%22_insert%22%3A%22lis%C3%A4ysn%C3%A4pp%C3%A4int%C3%A4%22%2C%22_left%22%3A%22vasenta%22%2C%22_left%20arrow%22%3A%22nuolta%20vasemmalle%22%2C%22_middle%22%3A%22keskimm%C3%A4ist%C3%A4%22%2C%22_move%20mouse%20to%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%3A%22siirr%C3%A4%20hiiri%20sijaintiin%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%2C%22_page%20down%22%3A%22alas-n%C3%A4pp%C3%A4int%C3%A4%22%2C%22_page%20up%22%3A%22yl%C3%B6s-n%C3%A4pp%C3%A4int%C3%A4%22%2C%22_press%20%5BKEY%5D%20for%20%5BSECONDS%5D%20seconds%20and%20%5BAND_WAIT%5D%22%3A%22paina%20%5BKEY%5D%20%5BSECONDS%5D%20sekunnin%20ajan%20ja%20%5BAND_WAIT%5D%22%2C%22_right%22%3A%22oikeaa%22%2C%22_right%20arrow%22%3A%22nuolta%20oikealle%22%2C%22_scroll%20lock%22%3A%22vierityslukkoa%22%2C%22_shift%22%3A%22vaihton%C3%A4pp%C3%A4int%C3%A4%22%2C%22_space%22%3A%22v%C3%A4lily%C3%B6nti%C3%A4%22%2C%22_up%20arrow%22%3A%22nuolta%20yl%C3%B6s%22%2C%22_wait%22%3A%22odota%22%7D%2C%22fr%22%3A%7B%22_left%22%3A%22gauche%22%2C%22_right%22%3A%22droite%22%7D%2C%22it%22%3A%7B%22_Key%20Simulation%22%3A%22Simulazione%20Tasti%22%2C%22_caps%20lock%22%3A%22blocco%20maiuscole%22%2C%22_click%20%5BBUTTON%5D%20mouse%20button%20at%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%20for%20%5BSECONDS%5D%20seconds%20and%20%5BAND_WAIT%5D%22%3A%22clicca%20pulsante%20%5BBUTTON%5D%20del%20mouse%20a%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%20per%20%5BSECONDS%5D%20secondi%20e%20%5BAND_WAIT%5D%22%2C%22_continue%22%3A%22continua%22%2C%22_delete%22%3A%22cancella%22%2C%22_down%20arrow%22%3A%22freccia%20gi%C3%B9%22%2C%22_end%22%3A%22fine%22%2C%22_enter%22%3A%22invio%22%2C%22_home%22%3A%22inizio%22%2C%22_insert%22%3A%22inserisci%22%2C%22_left%22%3A%22a%20sinistra%22%2C%22_left%20arrow%22%3A%22freccia%20sinistra%22%2C%22_middle%22%3A%22centrale%22%2C%22_move%20mouse%20to%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%3A%22porta%20mouse%20a%20x%3A%5BX%5D%20y%3A%20%5BY%5D%22%2C%22_page%20down%22%3A%22pagina%20gi%C3%B9%22%2C%22_page%20up%22%3A%22pagina%20su%22%2C%22_press%20%5BKEY%5D%20for%20%5BSECONDS%5D%20seconds%20and%20%5BAND_WAIT%5D%22%3A%22premi%20%5BKEY%5D%20per%20%5BSECONDS%5D%20secondi%20e%20%5BAND_WAIT%5D%22%2C%22_right%22%3A%22a%20destra%22%2C%22_right%20arrow%22%3A%22freccia%20destra%22%2C%22_scroll%20lock%22%3A%22blocco%20scorrimento%22%2C%22_space%22%3A%22spazio%22%2C%22_up%20arrow%22%3A%22freccia%20su%22%2C%22_wait%22%3A%22attendi%22%7D%2C%22ja%22%3A%7B%22_Key%20Simulation%22%3A%22%E3%82%AD%E3%83%BC%E3%82%B7%E3%83%9F%E3%83%A5%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%22%2C%22_backspace%22%3A%22Backspace%22%2C%22_caps%20lock%22%3A%22Caps%20Lock%22%2C%22_click%20%5BBUTTON%5D%20mouse%20button%20at%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%20for%20%5BSECONDS%5D%20seconds%20and%20%5BAND_WAIT%5D%22%3A%22%E3%83%9E%E3%82%A6%E3%82%B9%E3%81%AE%5BBUTTON%5D%E3%82%92x%E5%BA%A7%E6%A8%99%5BX%5Dy%E5%BA%A7%E6%A8%99%5BY%5D%E3%81%AE%E5%A0%B4%E6%89%80%E3%81%A7%5BSECONDS%5D%E7%A7%92%E6%8A%BC%E3%81%97%E3%81%A6%5BAND_WAIT%5D%22%2C%22_continue%22%3A%22%E7%B6%9A%E3%81%91%E3%82%8B%22%2C%22_control%22%3A%22Ctrl%22%2C%22_delete%22%3A%22Delete%22%2C%22_down%20arrow%22%3A%22%E4%B8%8B%E5%90%91%E3%81%8D%E7%9F%A2%E5%8D%B0%22%2C%22_end%22%3A%22End%22%2C%22_enter%22%3A%22Enter%22%2C%22_escape%22%3A%22Escape%22%2C%22_home%22%3A%22Home%22%2C%22_insert%22%3A%22Insert%22%2C%22_left%22%3A%22%E5%B7%A6%E3%83%9C%E3%82%BF%E3%83%B3%22%2C%22_left%20arrow%22%3A%22%E5%B7%A6%E5%90%91%E3%81%8D%E7%9F%A2%E5%8D%B0%22%2C%22_middle%22%3A%22%E3%83%9B%E3%82%A4%E3%83%BC%E3%83%AB%22%2C%22_move%20mouse%20to%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%3A%22%E3%83%9E%E3%82%A6%E3%82%B9%E3%81%AEx%E5%BA%A7%E6%A8%99%E3%82%92%5BX%5D%E3%80%81y%E5%BA%A7%E6%A8%99%E3%82%92%5BY%5D%E3%81%AB%E3%81%99%E3%82%8B%22%2C%22_page%20down%22%3A%22Page%20Down%22%2C%22_page%20up%22%3A%22Page%20Up%22%2C%22_press%20%5BKEY%5D%20for%20%5BSECONDS%5D%20seconds%20and%20%5BAND_WAIT%5D%22%3A%22%5BKEY%5D%E3%82%AD%E3%83%BC%E3%82%92%5BSECONDS%5D%E7%A7%92%E6%8A%BC%E3%81%97%E3%81%A6%5BAND_WAIT%5D%22%2C%22_right%22%3A%22%E5%8F%B3%E3%83%9C%E3%82%BF%E3%83%B3%22%2C%22_right%20arrow%22%3A%22%E5%8F%B3%E5%90%91%E3%81%8D%E7%9F%A2%E5%8D%B0%22%2C%22_scroll%20lock%22%3A%22Scroll%20Lock%22%2C%22_shift%22%3A%22Shift%22%2C%22_space%22%3A%22%E3%82%B9%E3%83%9A%E3%83%BC%E3%82%B9%22%2C%22_up%20arrow%22%3A%22%E4%B8%8A%E5%90%91%E3%81%8D%E7%9F%A2%E5%8D%B0%22%2C%22_wait%22%3A%22%E5%BE%85%E3%81%A4%22%7D%2C%22ko%22%3A%7B%22_Key%20Simulation%22%3A%22%ED%82%A4%20%EC%8B%9C%EB%AE%AC%EB%A0%88%EC%9D%B4%EC%85%98%22%2C%22_backspace%22%3A%22%EB%B0%B1%EC%8A%A4%ED%8E%98%EC%9D%B4%EC%8A%A4%22%2C%22_control%22%3A%22ctrl%22%2C%22_down%20arrow%22%3A%22%EC%95%84%EB%9E%98%EC%AA%BD%20%ED%99%94%EC%82%B4%ED%91%9C%22%2C%22_enter%22%3A%22%EC%97%94%ED%84%B0%22%2C%22_escape%22%3A%22esc%22%2C%22_left%22%3A%22%EC%99%BC%EC%AA%BD%22%2C%22_left%20arrow%22%3A%22%EC%99%BC%EC%AA%BD%20%ED%99%94%EC%82%B4%ED%91%9C%22%2C%22_middle%22%3A%22%EA%B0%80%EC%9A%B4%EB%8D%B0%22%2C%22_move%20mouse%20to%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%3A%22%EB%A7%88%EC%9A%B0%EC%8A%A4%EB%A5%BC%20x%3A%5BX%5D%20y%3A%5BY%5D%20(%EC%9C%BC)%EB%A1%9C%20%EC%9D%B4%EB%8F%99%ED%95%98%EA%B8%B0%22%2C%22_right%22%3A%22%EC%98%A4%EB%A5%B8%EC%AA%BD%22%2C%22_right%20arrow%22%3A%22%EC%98%A4%EB%A5%B8%EC%AA%BD%20%ED%99%94%EC%82%B4%ED%91%9C%22%2C%22_shift%22%3A%22%EC%8B%9C%ED%94%84%ED%8A%B8%22%2C%22_space%22%3A%22%EC%8A%A4%ED%8E%98%EC%9D%B4%EC%8A%A4%22%2C%22_up%20arrow%22%3A%22%EC%9C%84%EC%AA%BD%20%ED%99%94%EC%82%B4%ED%91%9C%22%7D%2C%22nb%22%3A%7B%22_Key%20Simulation%22%3A%22N%C3%B8kkel%20simulering%22%2C%22_backspace%22%3A%22tilbakestill%22%2C%22_control%22%3A%22kontroll%22%2C%22_delete%22%3A%22slett%22%2C%22_down%20arrow%22%3A%22nedoverpil%22%2C%22_end%22%3A%22slutt%22%2C%22_enter%22%3A%22skriv%20inn%22%2C%22_home%22%3A%22hjem%22%2C%22_insert%22%3A%22sett%20inn%22%2C%22_left%22%3A%22venstre%22%2C%22_left%20arrow%22%3A%22venstre%20pil%22%2C%22_middle%22%3A%22middels%22%2C%22_page%20down%22%3A%22side%20ned%22%2C%22_page%20up%22%3A%22side%20opp%22%2C%22_right%22%3A%22h%C3%B8yre%22%2C%22_right%20arrow%22%3A%22h%C3%B8yre%20pil%22%2C%22_scroll%20lock%22%3A%22rullel%C3%A5s%22%2C%22_space%22%3A%22mellomrom%22%2C%22_up%20arrow%22%3A%22oppoverpil%22%7D%2C%22nl%22%3A%7B%22_Key%20Simulation%22%3A%22Toetsen%20simuleren%22%2C%22_down%20arrow%22%3A%22pijltje%20omlaag%22%2C%22_left%22%3A%22linker%22%2C%22_left%20arrow%22%3A%22pijltje%20links%22%2C%22_middle%22%3A%22middelste%22%2C%22_move%20mouse%20to%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%3A%22verplaats%20muis%20naar%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%2C%22_right%22%3A%22rechter%22%2C%22_right%20arrow%22%3A%22pijltje%20rechts%22%2C%22_space%22%3A%22spatiebalk%22%2C%22_up%20arrow%22%3A%22pijltje%20omhoog%22%7D%2C%22pl%22%3A%7B%22_space%22%3A%22spacja%22%7D%2C%22ru%22%3A%7B%22_Key%20Simulation%22%3A%22%D0%A1%D0%B8%D0%BC%D1%83%D0%BB%D1%8F%D1%86%D0%B8%D1%8F%20%D0%9A%D0%BB%D0%B0%D0%B2%D0%B8%D1%88%22%2C%22_backspace%22%3A%22%D0%B7%D0%B0%D0%B4%D0%BD%D0%B8%D0%B9%20%D0%BF%D1%80%D0%BE%D0%B1%D0%B5%D0%BB%22%2C%22_caps%20lock%22%3A%22%D0%BB%D0%BE%D0%BA%20%D0%9A%D0%90%D0%9F%D0%A1%D0%90%22%2C%22_click%20%5BBUTTON%5D%20mouse%20button%20at%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%20for%20%5BSECONDS%5D%20seconds%20and%20%5BAND_WAIT%5D%22%3A%22%D0%BD%D0%B0%D0%B6%D0%B0%D1%82%D1%8C%20%5BBUTTON%5D%20%D0%BA%D0%BD%D0%BE%D0%BF%D0%BA%D1%83%20%D0%BC%D1%8B%D1%88%D0%B8%20%D0%BD%D0%B0%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%20%D0%BD%D0%B0%20%5BSECONDS%5D%20%D1%81%D0%B5%D0%BA%D1%83%D0%BD%D0%B4%20%D0%B8%20%5BAND_WAIT%5D%22%2C%22_continue%22%3A%22%D0%BF%D1%80%D0%BE%D0%B4%D0%BE%D0%BB%D0%B6%D0%B8%D1%82%D1%8C%22%2C%22_control%22%3A%22%D0%BA%D0%BE%D0%BD%D1%82%D1%80%D0%BE%D0%BB%22%2C%22_delete%22%3A%22%D1%83%D0%B4%D0%B0%D0%BB%D0%B8%D1%82%D1%8C%22%2C%22_down%20arrow%22%3A%22%D1%81%D1%82%D1%80%D0%B5%D0%BB%D0%BA%D0%B0%20%D0%B2%D0%BD%D0%B8%D0%B7%22%2C%22_end%22%3A%22%D0%BA%D0%BE%D0%BD%D0%B5%D1%86%22%2C%22_enter%22%3A%22%D0%B2%D0%B2%D0%BE%D0%B4%22%2C%22_escape%22%3A%22%D1%8D%D1%81%D0%BA%D0%B5%D0%B9%D0%BF%22%2C%22_home%22%3A%22%D0%B4%D0%BE%D0%BC%D0%BE%D0%B9%22%2C%22_insert%22%3A%22%D0%B2%D1%81%D1%82%D0%B0%D0%B2%D0%B8%D1%82%D1%8C%22%2C%22_left%22%3A%22%D0%BB%D0%B5%D0%B2%D0%BE%D0%BC%D1%83%20%D0%BA%D1%80%D0%B0%D1%8E%22%2C%22_left%20arrow%22%3A%22%D1%81%D1%82%D1%80%D0%B5%D0%BB%D0%BA%D0%B0%20%D0%BD%D0%B0%D0%BB%D0%B5%D0%B2%D0%BE%22%2C%22_middle%22%3A%22%D1%81%D0%B5%D1%80%D0%B5%D0%B4%D0%B8%D0%BD%D0%B0%22%2C%22_move%20mouse%20to%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%3A%22%D0%BF%D0%B5%D1%80%D0%B5%D0%BC%D0%B5%D1%81%D1%82%D0%B8%D1%82%D1%8C%20%D0%BC%D1%8B%D1%88%D1%8C%20%D0%B2%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%2C%22_page%20down%22%3A%22%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0%20%D0%B2%D0%BD%D0%B8%D0%B7%22%2C%22_page%20up%22%3A%22%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0%20%D0%B2%D0%B2%D0%B5%D1%80%D1%85%22%2C%22_press%20%5BKEY%5D%20for%20%5BSECONDS%5D%20seconds%20and%20%5BAND_WAIT%5D%22%3A%22%D0%BD%D0%B0%D0%B6%D0%B0%D1%82%D1%8C%20%5BKEY%5D%20%D0%BD%D0%B0%20%5BSECONDS%5D%20%D1%81%D0%B5%D0%BA%D1%83%D0%BD%D0%B4%20%D0%B8%20%5BAND_WAIT%5D%22%2C%22_right%22%3A%22%D0%BF%D1%80%D0%B0%D0%B2%D0%BE%D0%BC%D1%83%20%D0%BA%D1%80%D0%B0%D1%8E%22%2C%22_right%20arrow%22%3A%22%D1%81%D1%82%D1%80%D0%B5%D0%BB%D0%BA%D0%B0%20%D0%BD%D0%B0%D0%BF%D1%80%D0%B0%D0%B2%D0%BE%22%2C%22_scroll%20lock%22%3A%22%D0%BB%D0%BE%D0%BA%20%D0%BA%D1%80%D1%83%D1%87%D0%B5%D0%BD%D0%B8%D1%8F%22%2C%22_shift%22%3A%22%D1%88%D0%B8%D1%84%D1%82%22%2C%22_space%22%3A%22%D0%BF%D1%80%D0%BE%D0%B1%D0%BB%D0%B5%22%2C%22_up%20arrow%22%3A%22%D1%81%D1%82%D1%80%D0%B5%D0%BB%D0%BA%D0%B0%20%D0%B2%D0%B2%D0%B5%D1%80%D1%85%22%2C%22_wait%22%3A%22%D0%BF%D0%BE%D0%B4%D0%BE%D0%B6%D0%B4%D0%B0%D1%82%D1%8C%22%7D%2C%22tr%22%3A%7B%22_Key%20Simulation%22%3A%22Anahtar%20Sim%C3%BClasyon%22%7D%2C%22uk%22%3A%7B%22_Key%20Simulation%22%3A%22%D0%A1%D0%B8%D0%BC%D1%83%D0%BB%D1%8F%D1%86%D1%96%D1%8F%20%D0%9A%D0%BB%D0%B0%D0%B2%D1%96%D1%88%22%2C%22_down%20arrow%22%3A%22%D1%81%D1%82%D1%80%D1%96%D0%BB%D0%BA%D1%83%20%D0%B2%D0%BD%D0%B8%D0%B7%22%2C%22_end%22%3A%22%D0%B7%D0%B0%D0%BA%D1%96%D0%BD%D1%87%D1%83%D1%94%D1%82%D1%8C%D1%81%D1%8F%22%2C%22_enter%22%3A%22%D1%83%D0%B2%D1%96%D0%B9%D1%82%D0%B8%22%2C%22_left%22%3A%22%D0%BB%D1%96%D0%B2%D1%83%22%2C%22_left%20arrow%22%3A%22%D1%81%D1%82%D1%80%D1%96%D0%BB%D0%BA%D1%83%20%D0%BB%D1%96%D0%B2%D0%BE%D1%80%D1%83%D1%87%22%2C%22_middle%22%3A%22%D1%81%D0%B5%D1%80%D0%B5%D0%B4%D0%BD%D1%8E%22%2C%22_move%20mouse%20to%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%3A%22%D0%BF%D0%B5%D1%80%D0%B5%D0%BC%D1%96%D1%81%D1%82%D0%B8%D1%82%D0%B8%20%D0%B2%D0%BA%D0%B0%D0%B7%D1%96%D0%B2%D0%BD%D0%B8%D0%BA%20%D0%B2%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%2C%22_right%22%3A%22%D0%BF%D1%80%D0%B0%D0%B2%D1%83%22%2C%22_right%20arrow%22%3A%22%D1%81%D1%82%D1%80%D1%96%D0%BB%D0%BA%D1%83%20%D0%BF%D1%80%D0%B0%D0%B2%D0%BE%D1%80%D1%83%D1%87%22%2C%22_space%22%3A%22%D0%BF%D1%80%D0%BE%D0%B1%D1%96%D0%BB%22%2C%22_up%20arrow%22%3A%22%D1%81%D1%82%D1%80%D1%96%D0%BB%D0%BA%D1%83%20%D0%B2%D0%B3%D0%BE%D1%80%D1%83%22%7D%2C%22zh-cn%22%3A%7B%22_Key%20Simulation%22%3A%22%E6%A8%A1%E6%8B%9F%E6%8C%89%E9%94%AE%22%2C%22_caps%20lock%22%3A%22CapsLock%22%2C%22_click%20%5BBUTTON%5D%20mouse%20button%20at%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%20for%20%5BSECONDS%5D%20seconds%20and%20%5BAND_WAIT%5D%22%3A%22%E5%9C%A8x%EF%BC%9A%5BX%5Dy%EF%BC%9A%5BY%5D%E7%82%B9%E5%87%BB%E9%BC%A0%E6%A0%87%5BBUTTON%5D%5BSECONDS%5D%E7%A7%92%E5%B9%B6%5BAND_WAIT%5D%22%2C%22_continue%22%3A%22%E7%BB%A7%E7%BB%AD%22%2C%22_control%22%3A%22Ctrl%22%2C%22_down%20arrow%22%3A%22%E2%86%93%22%2C%22_end%22%3A%22End%22%2C%22_escape%22%3A%22Esc%22%2C%22_home%22%3A%22Home%22%2C%22_insert%22%3A%22Insert%22%2C%22_left%22%3A%22%E5%B7%A6%E9%94%AE%22%2C%22_left%20arrow%22%3A%22%E2%86%90%22%2C%22_middle%22%3A%22%E4%B8%AD%E9%94%AE%22%2C%22_move%20mouse%20to%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%3A%22%E5%B0%86%E9%BC%A0%E6%A0%87%E7%A7%BB%E5%88%B0%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22%2C%22_page%20down%22%3A%22PageDown%22%2C%22_page%20up%22%3A%22PageUp%22%2C%22_press%20%5BKEY%5D%20for%20%5BSECONDS%5D%20seconds%20and%20%5BAND_WAIT%5D%22%3A%22%E6%8C%89%E4%B8%8B%5BKEY%5D%E9%94%AE%5BSECONDS%5D%E7%A7%92%E5%B9%B6%5BAND_WAIT%5D%22%2C%22_right%22%3A%22%E5%8F%B3%E9%94%AE%22%2C%22_right%20arrow%22%3A%22%E2%86%92%22%2C%22_scroll%20lock%22%3A%22ScrollLock%22%2C%22_space%22%3A%22%E7%A9%BA%E6%A0%BC%22%2C%22_up%20arrow%22%3A%22%E2%86%91%22%2C%22_wait%22%3A%22%E7%AD%89%E5%BE%85%22%7D%7D)%3B%2F*%20end%20generated%20l10n%20code%20*%2F(function%20(Scratch)%20%7B%0A%20%20%22use%20strict%22%3B%0A%0A%20%20const%20icon%20%3D%20%60data%3Aimage%2Fsvg%2Bxml%3B%2C%24%7BencodeURIComponent(%60%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2264.412%22%20height%3D%2264.412%22%3E%3Cg%20stroke-miterlimit%3D%2210%22%20data-paper-data%3D%22%7B%26quot%3BisPaintingLayer%26quot%3B%3Atrue%7D%22%20style%3D%22mix-blend-mode%3Anormal%22%3E%3Cpath%20fill%3D%22%23bf0000%22%20stroke%3D%22maroon%22%20stroke-width%3D%223.5%22%20d%3D%22M1.75%2032.206c0-16.82%2013.636-30.456%2030.456-30.456s30.456%2013.636%2030.456%2030.456-13.636%2030.456-30.456%2030.456S1.75%2049.026%201.75%2032.206z%22%2F%3E%3Cpath%20fill%3D%22none%22%20d%3D%22M.066%2064.346V.066h64.28v64.28z%22%2F%3E%3Cpath%20fill%3D%22%23fff%22%20d%3D%22M17.988%2033.804c-2.648%200-4.768-2.03-4.795-4.795-.136-13.804%205.217-13.443%2011.823-13.618%202.547-.067%209.038%200%2013.68%200%206.427%200%2012.15.676%2012.523%2013.618.05%201.697-2.146%204.795-4.795%204.795zM20.254%2049.022c-2.743%200-4.966-2.147-4.966-4.795l-2.096-9.435c0-.368%202.223%202.526%204.965%202.526h28.097c2.743%200%204.966-3.374%204.966-3.126l-2.096%2010.035c0%202.648-2.223%204.795-4.966%204.795z%22%2F%3E%3Cpath%20fill%3D%22%23bf0000%22%20fill-rule%3D%22evenodd%22%20d%3D%22M25.604%2025.55h3.199l1.374-6.151c.148-.705%201.208-1.202%202.36-1.098.93.08%201.655.543%201.768%201.098l1.374%206.15h3.125c.89%200%201.32.66.705%201.04l-6.598%204.116c-.39.231-1.024.231-1.394%200l-6.62-4.115c-.613-.382-.167-1.04.707-1.04%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E%60)%7D%60%3B%0A%0A%20%20%2F%2F%20This%20is%20from%20the%20Scratch%20Addons%20gamepad%20addon%2C%20which%20normally%20could%20be%20a%20problem%20because%20it%20is%20GPLv3%2C%0A%20%20%2F%2F%20but%20I%20(GarboMuffin)%20wrote%20that%20code%20so%20there%20is%20no%20problem.%0A%20%20let%20getCanvasSize%3B%0A%20%20if%20(window.ResizeObserver)%20%7B%0A%20%20%20%20let%20canvasWidth%20%3D%20Scratch.vm.runtime.stageWidth%3B%0A%20%20%20%20let%20canvasHeight%20%3D%20Scratch.vm.runtime.stageHeight%3B%0A%20%20%20%20const%20resize%20%3D%20new%20ResizeObserver((entries)%20%3D%3E%20%7B%0A%20%20%20%20%20%20for%20(const%20entry%20of%20entries)%20%7B%0A%20%20%20%20%20%20%20%20canvasWidth%20%3D%20entry.contentRect.width%3B%0A%20%20%20%20%20%20%20%20canvasHeight%20%3D%20entry.contentRect.height%3B%0A%20%20%20%20%20%20%7D%0A%20%20%20%20%7D)%3B%0A%20%20%20%20resize.observe(Scratch.vm.runtime.renderer.canvas)%3B%0A%20%20%20%20getCanvasSize%20%3D%20()%20%3D%3E%20%5BcanvasWidth%2C%20canvasHeight%5D%3B%0A%20%20%7D%20else%20%7B%0A%20%20%20%20getCanvasSize%20%3D%20()%20%3D%3E%20%7B%0A%20%20%20%20%20%20const%20rectangle%20%3D%0A%20%20%20%20%20%20%20%20Scratch.vm.runtime.renderer.canvas.getBoundingClientRect()%3B%0A%20%20%20%20%20%20return%20%5Brectangle.width%2C%20rectangle.height%5D%3B%0A%20%20%20%20%7D%3B%0A%20%20%7D%0A%0A%20%20let%20simulatedX%20%3D%200%3B%0A%20%20let%20simulatedY%20%3D%200%3B%0A%20%20const%20postMouseData%20%3D%20(data)%20%3D%3E%20%7B%0A%20%20%20%20const%20%5BrectangleWidth%2C%20rectangleHeight%5D%20%3D%20getCanvasSize()%3B%0A%20%20%20%20Scratch.vm.postIOData(%22mouse%22%2C%20%7B%0A%20%20%20%20%20%20...data%2C%0A%20%20%20%20%20%20canvasWidth%3A%20rectangleWidth%2C%0A%20%20%20%20%20%20canvasHeight%3A%20rectangleHeight%2C%0A%20%20%20%20%20%20x%3A%0A%20%20%20%20%20%20%20%20(simulatedX%20%2B%20Scratch.vm.runtime.stageWidth%20%2F%202)%20*%0A%20%20%20%20%20%20%20%20(rectangleWidth%20%2F%20Scratch.vm.runtime.stageWidth)%2C%0A%20%20%20%20%20%20y%3A%0A%20%20%20%20%20%20%20%20(Scratch.vm.runtime.stageHeight%20%2F%202%20-%20simulatedY)%20*%0A%20%20%20%20%20%20%20%20(rectangleHeight%20%2F%20Scratch.vm.runtime.stageHeight)%2C%0A%20%20%20%20%7D)%3B%0A%20%20%7D%3B%0A%0A%20%20%2F**%0A%20%20%20*%20%40param%20%7Bunknown%7D%20seconds%0A%20%20%20*%20%40param%20%7Bunknown%7D%20andWait%0A%20%20%20*%20%40param%20%7B()%20%3D%3E%20void%7D%20callback%0A%20%20%20*%20%40returns%20%7BPromise%3Cvoid%3E%7Cvoid%7D%0A%20%20%20*%2F%0A%20%20const%20doLater%20%3D%20(seconds%2C%20andWait%2C%20callback)%20%3D%3E%20%7B%0A%20%20%20%20const%20ms%20%3D%20Scratch.Cast.toNumber(seconds)%20*%201000%3B%0A%0A%20%20%20%20if%20(Scratch.Cast.toString(andWait)%20%3D%3D%3D%20%22and%20wait%22)%20%7B%0A%20%20%20%20%20%20return%20new%20Promise((resolve)%20%3D%3E%20%7B%0A%20%20%20%20%20%20%20%20setTimeout(()%20%3D%3E%20%7B%0A%20%20%20%20%20%20%20%20%20%20callback()%3B%0A%20%20%20%20%20%20%20%20%20%20resolve()%3B%0A%20%20%20%20%20%20%20%20%7D%2C%20ms)%3B%0A%20%20%20%20%20%20%7D)%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20setTimeout(callback%2C%20ms)%3B%0A%20%20%20%20%2F%2F%20don't%20return%20a%20Promise%20at%20all%2C%20otherwise%20the%20block%20waits%20for%201%20frame%0A%20%20%7D%3B%0A%0A%20%20class%20KeySimulation%20%7B%0A%20%20%20%20getInfo()%20%7B%0A%20%20%20%20%20%20return%20%7B%0A%20%20%20%20%20%20%20%20id%3A%20%22cubesterKeySimulation%22%2C%0A%20%20%20%20%20%20%20%20name%3A%20Scratch.translate(%22Key%20Simulation%22)%2C%0A%20%20%20%20%20%20%20%20color1%3A%20%22%23BF0000%22%2C%0A%20%20%20%20%20%20%20%20color2%3A%20%22%23800000%22%2C%0A%20%20%20%20%20%20%20%20menuIconURI%3A%20icon%2C%0A%20%20%20%20%20%20%20%20docsURI%3A%20%22https%3A%2F%2Fextensions.turbowarp.org%2FCubesterYT%2FKeySimulation%22%2C%0A%0A%20%20%20%20%20%20%20%20blocks%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22pressKey%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20Scratch.translate(%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22press%20%5BKEY%5D%20for%20%5BSECONDS%5D%20seconds%20and%20%5BAND_WAIT%5D%22%0A%20%20%20%20%20%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20KEY%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20menu%3A%20%22KEYS%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20SECONDS%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20%220.1%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20AND_WAIT%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20menu%3A%20%22AND_WAIT%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22clickMouse%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20Scratch.translate(%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22click%20%5BBUTTON%5D%20mouse%20button%20at%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%20for%20%5BSECONDS%5D%20seconds%20and%20%5BAND_WAIT%5D%22%0A%20%20%20%20%20%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20BUTTON%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20menu%3A%20%22BUTTONS%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20X%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20%220%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20Y%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20%220%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20SECONDS%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20%220.1%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20AND_WAIT%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.STRING%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20menu%3A%20%22AND_WAIT%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20opcode%3A%20%22moveMouse%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20Scratch.translate(%22move%20mouse%20to%20x%3A%20%5BX%5D%20y%3A%20%5BY%5D%22)%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20blockType%3A%20Scratch.BlockType.COMMAND%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20arguments%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20X%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20%220%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20Y%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20type%3A%20Scratch.ArgumentType.NUMBER%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20defaultValue%3A%20%220%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%5D%2C%0A%20%20%20%20%20%20%20%20menus%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20KEYS%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20acceptReporters%3A%20true%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20items%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20Scratch.translate(%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20default%3A%20%22space%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20description%3A%20%22Refers%20to%20the%20space%20key%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D)%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20value%3A%20%22%20%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22up%20arrow%22)%2C%20value%3A%20%22ArrowUp%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22down%20arrow%22)%2C%20value%3A%20%22ArrowDown%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22right%20arrow%22)%2C%20value%3A%20%22ArrowRight%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22left%20arrow%22)%2C%20value%3A%20%22ArrowLeft%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22enter%22)%2C%20value%3A%20%22Enter%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22backspace%22)%2C%20value%3A%20%22Backspace%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22delete%22)%2C%20value%3A%20%22Delete%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22shift%22)%2C%20value%3A%20%22Shift%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22caps%20lock%22)%2C%20value%3A%20%22CapsLock%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22scroll%20lock%22)%2C%20value%3A%20%22ScrollLock%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22control%22)%2C%20value%3A%20%22Control%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22escape%22)%2C%20value%3A%20%22Escape%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22insert%22)%2C%20value%3A%20%22Insert%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22home%22)%2C%20value%3A%20%22Home%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22end%22)%2C%20value%3A%20%22End%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22page%20up%22)%2C%20value%3A%20%22PageUp%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22page%20down%22)%2C%20value%3A%20%22PageDown%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22a%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22b%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22c%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22d%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22e%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22f%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22g%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22h%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22i%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22j%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22k%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22l%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22m%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22n%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22o%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22p%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22q%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22r%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22s%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22t%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22u%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22v%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22w%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22x%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22y%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22z%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%220%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%221%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%222%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%223%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%224%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%225%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%226%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%227%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%228%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%229%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22-%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%2C%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22.%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%60%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%3D%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%5B%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%5D%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%5C%5C%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%3B%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22'%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%2F%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22~%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%2B%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22!%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%3A%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22*%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%23%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22(%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22)%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%3F%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%3C%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%3E%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%22%40%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20'%22'%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%2C%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20BUTTONS%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20acceptReporters%3A%20true%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20items%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22left%22)%2C%20value%3A%20%220%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22middle%22)%2C%20value%3A%20%221%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%20text%3A%20Scratch.translate(%22right%22)%2C%20value%3A%20%222%22%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%2C%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20AND_WAIT%3A%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20acceptReporters%3A%20true%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20items%3A%20%5B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20Scratch.translate(%22continue%22)%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20value%3A%20%22without%20waiting%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7B%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20text%3A%20Scratch.translate(%22wait%22)%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20value%3A%20%22and%20wait%22%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%5D%2C%0A%20%20%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%20%20%7D%2C%0A%20%20%20%20%20%20%7D%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20pressKey(args)%20%7B%0A%20%20%20%20%20%20Scratch.vm.postIOData(%22keyboard%22%2C%20%7B%0A%20%20%20%20%20%20%20%20key%3A%20Scratch.Cast.toString(args.KEY)%2C%0A%20%20%20%20%20%20%20%20isDown%3A%20true%2C%0A%20%20%20%20%20%20%7D)%3B%0A%0A%20%20%20%20%20%20return%20doLater(args.SECONDS%2C%20args.AND_WAIT%2C%20()%20%3D%3E%20%7B%0A%20%20%20%20%20%20%20%20Scratch.vm.postIOData(%22keyboard%22%2C%20%7B%0A%20%20%20%20%20%20%20%20%20%20key%3A%20Scratch.Cast.toString(args.KEY)%2C%0A%20%20%20%20%20%20%20%20%20%20isDown%3A%20false%2C%0A%20%20%20%20%20%20%20%20%7D)%3B%0A%20%20%20%20%20%20%7D)%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20clickMouse(args)%20%7B%0A%20%20%20%20%20%20simulatedX%20%3D%20Scratch.Cast.toNumber(args.X)%3B%0A%20%20%20%20%20%20simulatedY%20%3D%20Scratch.Cast.toNumber(args.Y)%3B%0A%20%20%20%20%20%20postMouseData(%7B%0A%20%20%20%20%20%20%20%20isDown%3A%20true%2C%0A%20%20%20%20%20%20%20%20button%3A%20Scratch.Cast.toNumber(args.BUTTON)%2C%0A%20%20%20%20%20%20%7D)%3B%0A%0A%20%20%20%20%20%20return%20doLater(args.SECONDS%2C%20args.AND_WAIT%2C%20()%20%3D%3E%20%7B%0A%20%20%20%20%20%20%20%20postMouseData(%7B%0A%20%20%20%20%20%20%20%20%20%20isDown%3A%20false%2C%0A%20%20%20%20%20%20%20%20%20%20button%3A%20Scratch.Cast.toNumber(args.BUTTON)%2C%0A%20%20%20%20%20%20%20%20%7D)%3B%0A%20%20%20%20%20%20%7D)%3B%0A%20%20%20%20%7D%0A%0A%20%20%20%20moveMouse(args)%20%7B%0A%20%20%20%20%20%20simulatedX%20%3D%20Scratch.Cast.toNumber(args.X)%3B%0A%20%20%20%20%20%20simulatedY%20%3D%20Scratch.Cast.toNumber(args.Y)%3B%0A%20%20%20%20%20%20postMouseData(%7B%7D)%3B%0A%20%20%20%20%7D%0A%20%20%7D%0A%0A%20%20Scratch.extensions.register(new%20KeySimulation())%3B%0A%7D)(Scratch)%3B%0A%20%7D)(Scratch)%3B"]) {
+        vm.extensionManager.loadExtensionURL(extension);
+      }
+
+    } catch (e) {
+      handleError(e);
+    }
+  </script>
+  
+  
+    <script>
+      const getProjectData = (function() {
+        const storage = scaffolding.storage;
+        storage.onprogress = (total, loaded) => {
+          setProgress(interpolate(0.2, 0.98, loaded / total));
+        };
+        
+        storage.addWebStore(
+          [
+            storage.AssetType.ImageVector,
+            storage.AssetType.ImageBitmap,
+            storage.AssetType.Sound,
+            storage.AssetType.Font
+          ].filter(i => i),
+          (asset) => new URL('./assets/' + asset.assetId + '.' + asset.dataFormat, location).href
+        );
+        return () => new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.onload = () => {
+          resolve(xhr.response);
+        };
+        xhr.onerror = () => {
+          if (location.protocol === 'file:') {
+            reject(new Error('Zip environment must be used on a website, not on a local file. To fix this error, use the "Plain HTML" environment instead.'));
+          } else {
+            reject(new Error('Request to load project data failed.'));
+          }
+        };
+        xhr.onprogress = (e) => {
+          if (e.lengthComputable) {
+            setProgress(interpolate(0.1, 0.2, e.loaded / e.total));
+          }
+        };
+        xhr.responseType = 'arraybuffer';
+        xhr.open('GET', "./assets/project.json");
+        xhr.send();
+      });
+      })();
+    </script>
+  <script>
+    const run = async () => {
+      const projectData = await getProjectData();
+      await scaffolding.loadProject(projectData);
+      setProgress(1);
+      loadingScreen.hidden = true;
+      if (true) {
+        scaffolding.start();
+      } else {
+        launchScreen.hidden = false;
+        launchScreen.addEventListener('click', () => {
+          launchScreen.hidden = true;
+          scaffolding.start();
+        });
+        launchScreen.focus();
+      }
+    };
+    run().catch(handleError);
+  </script>
+</body>
+</html>
